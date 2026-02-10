@@ -137,8 +137,8 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 material.SetFloat(Property.ReceiveShadows, target.receiveShadows ? 1.0f : 0.0f);
                 
                 // [FIX START] Ensure Fog property is set on material
-                // Note: We use the string "ReceiveFog" or Property.ReceiveFog if available to be safe across versions
-                material.SetFloat(Property.ReceiveFog, m_ReceiveFog ? 1.0f : 0.0f); 
+                // Changed from Property.ReceiveFog to string "ReceiveFog" to avoid compiler error CS0117
+                material.SetFloat("ReceiveFog", m_ReceiveFog ? 1.0f : 0.0f); 
                 // [FIX END]
 
                 material.SetFloat(Property.SurfaceType, (float)target.surfaceType);
@@ -201,8 +201,8 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 collector.AddFloatProperty(Property.ReceiveShadows, target.receiveShadows ? 1.0f : 0.0f);
 
                 // [FIX START] Add Receive Fog property to collector
-                // This ensures the Unity 6 compiler knows to generate fog code
-                collector.AddToggleProperty(Property.ReceiveFog, m_ReceiveFog);
+                // Changed from Property.ReceiveFog to string "ReceiveFog" to avoid compiler error CS0117
+                collector.AddToggleProperty("ReceiveFog", m_ReceiveFog);
                 // [FIX END]
 
                 // setup properties using the defaults
