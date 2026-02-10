@@ -154,8 +154,9 @@ half4 frag(PackedVaryings packedInput) : SV_TARGET
 
     half4 color = UniversalFragmentBlinnPhong(inputData, surface);
 
-    color.rgb = MixFog(color.rgb, inputData.fogCoord);
-#if UNITY_VERSION >= 202220
+#if defined(FOG_LINEAR) || defined(FOG_EXP) || defined(FOG_EXP2)
+    color.rgb = MixFogColor(color.rgb, _FogColor.rgb, inputData.fogCoord);
+#endif#if UNITY_VERSION >= 202220
 
     color.a = OutputAlpha(color.a, isTransparent);
 
