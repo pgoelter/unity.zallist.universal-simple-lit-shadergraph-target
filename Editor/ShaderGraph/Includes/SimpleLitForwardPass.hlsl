@@ -1,3 +1,4 @@
+// --- HLSL File Start ---
 
 void InitializeInputData(Varyings input, SurfaceDescription surfaceDescription, out InputData inputData)
 {
@@ -154,9 +155,14 @@ half4 frag(PackedVaryings packedInput) : SV_TARGET
 
     half4 color = UniversalFragmentBlinnPhong(inputData, surface);
 
-#if defined(FOG_LINEAR) || defined(FOG_EXP) || defined(FOG_EXP2)
-    color.rgb = MixFogColor(color.rgb, _FogColor.rgb, inputData.fogCoord);
-#endif#if UNITY_VERSION >= 202220
+    // --- FIX: Ersetze MixFog durch direkten MixFogColor Aufruf ---
+    // In Unity 6 wird MixFog oft durch Keywords blockiert, die in Custom Targets fehlen.
+    #if defined(FOG_LINEAR) || defined(FOG_EXP) || defined(FOG_EXP2)
+        color.rgb = MixFogColor(color.rgb, _FogColor.rgb, inputData.fogCoord);
+    #endif
+    // -------------------------------------------------------------
+
+#if UNITY_VERSION >= 202220
 
     color.a = OutputAlpha(color.a, isTransparent);
 
@@ -171,3 +177,5 @@ half4 frag(PackedVaryings packedInput) : SV_TARGET
     return color;
 #endif //UNITY_VERSION 202220
 }
+
+// --- HLSL File End ---
