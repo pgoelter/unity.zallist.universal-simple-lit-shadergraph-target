@@ -46,6 +46,11 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
         bool m_BlendModePreserveSpecular = true;
 #endif
 
+        // [FIX START] Added Receive Fog field
+        [SerializeField]
+        bool m_ReceiveFog = true;
+        // [FIX END]
+
         public UniversalSimpleLitSubTarget()
         {
             displayName = "Simple Lit";
@@ -79,6 +84,14 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
             set => m_BlendModePreserveSpecular = value;
         }
 #endif
+
+        // [FIX START] Added Receive Fog Property
+        public bool receiveFog
+        {
+            get => m_ReceiveFog;
+            set => m_ReceiveFog = value;
+        }
+        // [FIX END]
 
         public override bool IsActive() => true;
 
@@ -122,6 +135,12 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 material.SetFloat(SimpleLitProperty.SpecularHighlights, specularHighlights ? 1.0f : 0.0f);
                 material.SetFloat(Property.CastShadows, target.castShadows ? 1.0f : 0.0f);
                 material.SetFloat(Property.ReceiveShadows, target.receiveShadows ? 1.0f : 0.0f);
+                
+                // [FIX START] Ensure Fog property is set on material
+                // Note: We use the string "ReceiveFog" or Property.ReceiveFog if available to be safe across versions
+                material.SetFloat(Property.ReceiveFog, m_ReceiveFog ? 1.0f : 0.0f); 
+                // [FIX END]
+
                 material.SetFloat(Property.SurfaceType, (float)target.surfaceType);
                 material.SetFloat(Property.BlendMode, (float)target.alphaMode);
                 material.SetFloat(Property.AlphaClip, target.alphaClip ? 1.0f : 0.0f);
@@ -181,6 +200,11 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 collector.AddFloatProperty(Property.CastShadows, target.castShadows ? 1.0f : 0.0f);
                 collector.AddFloatProperty(Property.ReceiveShadows, target.receiveShadows ? 1.0f : 0.0f);
 
+                // [FIX START] Add Receive Fog property to collector
+                // This ensures the Unity 6 compiler knows to generate fog code
+                collector.AddToggleProperty(Property.ReceiveFog, m_ReceiveFog);
+                // [FIX END]
+
                 // setup properties using the defaults
                 collector.AddFloatProperty(Property.SurfaceType, (float)target.surfaceType);
                 collector.AddFloatProperty(Property.BlendMode, (float)target.alphaMode);
@@ -190,7 +214,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 #endif
                 collector.AddFloatProperty(Property.SrcBlend, 1.0f);    // always set by material inspector, ok to have incorrect values here
                 collector.AddFloatProperty(Property.DstBlend, 0.0f);    // always set by material inspector, ok to have incorrect values here
-                                // Set alpha blend defaults based on surface type
+                                                                // Set alpha blend defaults based on surface type
                 collector.AddFloatProperty(Property.SrcBlendAlpha, 1.0f);    // One - used for both opaque and transparent
                 if (target.surfaceType == SurfaceType.Opaque)
                 {
@@ -200,7 +224,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 {
                     collector.AddFloatProperty(Property.DstBlendAlpha, 10.0f);   // OneMinusSrcAlpha for transparent (always set by material inspector)
                 }
-          
+           
                 collector.AddToggleProperty(Property.ZWrite, (target.surfaceType == SurfaceType.Opaque));
                 collector.AddFloatProperty(Property.ZWriteControl, (float)target.zWriteControl);
                 collector.AddFloatProperty(Property.ZTest, (float)target.zTestMode);    // ztest mode is designed to directly pass as ztest
@@ -233,6 +257,18 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 specularHighlights = evt.newValue;
                 onChange();
             });
+
+            // [FIX START] Add UI Toggle for Receive Fog
+            context.AddProperty("Receive Fog", new Toggle() { value = m_ReceiveFog }, (evt) =>
+            {
+                if (Equals(m_ReceiveFog, evt.newValue))
+                    return;
+
+                registerUndo("Change Receive Fog");
+                m_ReceiveFog = evt.newValue;
+                onChange();
+            });
+            // [FIX END]
 
             universalTarget.AddDefaultSurfacePropertiesGUI(ref context, onChange, registerUndo, showReceiveShadows: true);
 
@@ -268,6 +304,9 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
         {
             int hash = base.ComputeMaterialNeedsUpdateHash();
             hash = hash * 23 + target.allowMaterialOverride.GetHashCode();
+            // [FIX START] Include fog in hash
+            hash = hash * 23 + m_ReceiveFog.GetHashCode();
+            // [FIX END]
             return hash;
         }
 
